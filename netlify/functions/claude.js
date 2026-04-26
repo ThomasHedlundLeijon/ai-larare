@@ -1,21 +1,19 @@
-exports.handler = async function(event) {
-  // Only allow POST
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+export default async (request) => {
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
   }
 
-  // API key lives here on the server — never visible to users
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
   if (!ANTHROPIC_API_KEY) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "API-nyckel saknas på servern. Kontakta administratören." })
-    };
+    return new Response(
+      JSON.stringify({ error: "API-nyckel saknas på servern." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = await request.json();
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -33,18 +31,21 @@ exports.handler = async function(event) {
 
     const data = await response.json();
 
-    return {
-      statusCode: 200,
+    return new Response(JSON.stringify(data), {
+      status: 200,
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify(data),
-    };
+    });
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Serverfel: " + err.message }),
-    };
+    return new Response(
+      JSON.stringify({ error: "Serverfel: " + err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
+};
+
+export const config = {
+  path: "/.netlify/functions/claude"
 };
