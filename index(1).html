@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lärarassistent – Cedergrenska</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:linear-gradient(140deg,#060D1F 0%,#0C1A30 55%,#070E1E 100%);min-height:100vh;}
+.W{max-width:900px;margin:0 auto;padding:18px 16px 60px;}
+.HDR{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.LOGO{display:flex;align-items:center;gap:11px;}
+.LI{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#1A56DB,#6C35DE);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+.LT h2{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:white;}
+.LT p{font-size:11px;color:rgba(255,255,255,.38);}
+.PROG{display:flex;align-items:center;gap:5px;}
+.PS{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;transition:all .25s;}
+.PS.done{background:#10B981;color:white;}
+.PS.act{background:linear-gradient(135deg,#1A56DB,#6C35DE);color:white;box-shadow:0 0 0 3px rgba(26,86,219,.28);}
+.PS.fut{background:rgba(255,255,255,.07);color:rgba(255,255,255,.22);}
+.PL{width:16px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;}
+.PL.done{background:#10B981;}
+.CARD{background:white;border-radius:22px;padding:30px 34px;box-shadow:0 20px 70px rgba(0,0,0,.5);}
+.NAV{display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px;}
+.BTB{padding:10px 20px;border-radius:10px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.09);font-family:'Syne',sans-serif;font-weight:600;font-size:13px;cursor:pointer;}
+.BTB:hover{background:rgba(255,255,255,.13);color:white;}
+.BTN{padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,#1A56DB,#2563EB);color:white;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+.BTN:disabled{opacity:.38;cursor:not-allowed;}
+.BTG{padding:14px 38px;border-radius:12px;background:linear-gradient(135deg,#6C35DE,#1A56DB);color:white;border:none;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 6px 28px rgba(108,53,222,.38);}
+.BTG:disabled{opacity:.45;cursor:not-allowed;}
+.TIT{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:#080E1C;margin-bottom:5px;}
+.SUB{color:#64748B;font-size:13.5px;margin-bottom:22px;line-height:1.55;}
+.G2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.OPT{position:relative;border:2px solid #E2E8F0;border-radius:15px;padding:18px;cursor:pointer;transition:all .18s;background:#FAFBFC;}
+.OPT:hover{border-color:#93C5FD;background:#EFF6FF;}
+.OPT.sel{border-color:#1A56DB;background:linear-gradient(135deg,#EFF6FF,#EDE9FE);}
+.OCH{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;background:#1A56DB;display:flex;align-items:center;justify-content:center;color:white;font-size:13px;}
+.TAG{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;background:#DBEAFE;color:#1E40AF;margin-right:4px;margin-top:6px;}
+.LBL{display:block;font-weight:700;font-size:11px;color:#374151;margin-bottom:7px;letter-spacing:.4px;text-transform:uppercase;}
+.INP{width:100%;padding:12px 16px;border:2px solid #E2E8F0;border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;color:#0F172A;background:#FAFBFC;outline:none;}
+.INP:focus{border-color:#1A56DB;background:white;}
+.SEL{width:100%;padding:12px 16px;border:2px solid #E2E8F0;border-radius:10px;font-size:14px;font-family:'Nunito',sans-serif;color:#0F172A;background:#FAFBFC;appearance:none;cursor:pointer;outline:none;}
+.CB{padding:7px 13px;border-radius:9px;border:2px solid #E2E8F0;background:white;font-family:'Syne',sans-serif;font-weight:600;font-size:12px;color:#4B5563;cursor:pointer;}
+.CB.act{border-color:#1A56DB;color:#1A56DB;background:#EFF6FF;}
+.NG{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.NC{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:11px;border:2px solid #E2E8F0;background:#FAFBFC;}
+.NIN{width:60px;padding:5px 8px;border:2px solid #E2E8F0;border-radius:7px;font-size:14px;font-weight:700;text-align:center;outline:none;background:white;font-family:'Nunito',sans-serif;}
+.FG{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.FI{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:11px;border:2px solid #E2E8F0;cursor:pointer;transition:all .14s;background:#FAFBFC;}
+.FI.on{border-color:#1A56DB;background:linear-gradient(135deg,#EFF6FF,#EDE9FE);}
+.FCB{width:20px;height:20px;border-radius:5px;border:2px solid #CBD5E1;background:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:white;}
+.FI.on .FCB{background:#1A56DB;border-color:#1A56DB;}
+.OC{background:#F8FBFF;border:1.5px solid #BFDBFE;border-radius:14px;padding:22px 26px;max-height:560px;overflow-y:auto;line-height:1.8;font-size:13.5px;color:#1E293B;}
+.MH1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#1E3A8A;margin:18px 0 7px;padding-bottom:5px;border-bottom:2px solid #BFDBFE;}
+.MH2{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:#1D4ED8;margin:14px 0 5px;}
+.MH3{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:#2563EB;margin:10px 0 3px;text-transform:uppercase;letter-spacing:.5px;}
+.MP{margin:3px 0 6px;}
+.MUL{padding-left:18px;margin:4px 0;}
+.MOL{padding-left:18px;margin:4px 0;}
+.MLI{margin:2px 0;}
+.MHR{border:none;height:2px;background:linear-gradient(90deg,#BFDBFE,transparent);margin:14px 0;}
+.MT{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
+.MTH{background:#1E3A8A;color:white;padding:7px 11px;text-align:left;font-family:'Syne',sans-serif;font-weight:600;font-size:11px;}
+.MTH:first-child{border-radius:5px 0 0 0;}.MTH:last-child{border-radius:0 5px 0 0;}
+.MTD{border:1px solid #BFDBFE;padding:6px 11px;}
+.MTE td{background:#EFF6FF;}
+.IB{padding:11px 15px;border-radius:10px;border:1px solid;margin:10px 0;font-size:13px;}
+.IB.gn{background:#F0FDF4;border-color:#BBF7D0;color:#166534;}
+.IB.am{background:#FFFBEB;border-color:#FDE68A;color:#92400E;}
+.IB.pu{background:#F5F3FF;border-color:#DDD6FE;color:#5B21B6;}
+.SBOX{display:flex;align-items:center;gap:22px;padding:15px 18px;background:#F8FAFC;border:2px solid #E2E8F0;border-radius:13px;margin-bottom:16px;}
+.BN{font-family:'Syne',sans-serif;font-size:46px;font-weight:800;color:#1A56DB;line-height:1;}
+.FEAT{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0;}
+.FC{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px;}
+.HB{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;background:linear-gradient(135deg,#EFF6FF,#EDE9FE);border:1px solid #C7D2FE;color:#3730A3;font-size:11px;font-weight:700;margin-bottom:13px;font-family:'Syne',sans-serif;}
+.LOAD{display:flex;flex-direction:column;align-items:center;padding:40px 24px;gap:13px;}
+.SPIN{width:50px;height:50px;border-radius:50%;border:4px solid #DBEAFE;border-top-color:#1A56DB;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.EDITBOX{margin-top:16px;background:#F0FDF4;border:2px solid #BBF7D0;border-radius:13px;padding:16px 18px;}
+.EDITROW{display:flex;gap:9px;align-items:flex-start;margin-top:9px;}
+.EDITA{width:100%;padding:10px 13px;border:2px solid #D1FAE5;border-radius:9px;font-size:13px;font-family:'Nunito',sans-serif;resize:vertical;min-height:52px;outline:none;background:white;}
+.EDITA:focus{border-color:#10B981;}
+.EDITBTN{padding:10px 18px;border-radius:9px;background:#10B981;color:white;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.EDITBTN:disabled{opacity:.45;cursor:not-allowed;}
+.EB{background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:12px 15px;margin-bottom:12px;color:#DC2626;font-size:13px;}
+.PROFBADGE{display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;cursor:pointer;}
+.PROFBADGE span{color:rgba(255,255,255,.7);font-size:12px;font-family:'Syne',sans-serif;font-weight:600;}
+.QCHIP{padding:4px 10px;border-radius:20px;border:1px solid #A7F3D0;background:#ECFDF5;color:#065F46;font-size:11px;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif;margin:2px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const GY = {
+  'Biologi': ['1','2'], 'Engelska': ['5','6','7'], 'Filosofi': ['1','2'],
+  'Fysik': ['1a1','1a2','1b'], 'Geografi': ['1','2'],
+  'Historia': ['1a1','1a2','1b','2a','2b'], 'Idrott och hälsa': ['1','2','3'],
+  'Kemi': ['1','2'], 'Matematik': ['1a','1b','1c','2a','2b','2c','3b','3c','4','5'],
+  'Naturkunskap': ['1a1','1a2','1b','2'], 'Psykologi': ['1','2a','2b'],
+  'Religionskunskap': ['1','2'], 'Samhällskunskap': ['1a1','1a2','1b','2','3'],
+  'Svenska': ['1','2','3'], 'Svenska som andraspråk': ['1','2','3'],
+  'Teknik': ['1','2'], 'Programmering': ['1','2'], 'Företagsekonomi': ['1','2'],
+};
+
+const HG = ['Biologi','Engelska','Fysik','Geografi','Historia','Idrott och hälsa','Kemi','Matematik','Moderna språk','Musik','Religionskunskap','Samhällskunskap','Slöjd','Svenska','Svenska som andraspråk','Teknik'];
+
+const PLAN_TYPES = [
+  { id: 'larsarsplanering', e: '📅', l: 'Lärsårsplanering', d: 'Helårsoversikt med alla moment, bedömningspunkter och progression', t: ['Termin 1 & 2','Alla moment','Bedömningsplan'] },
+  { id: 'momentplanering', e: '🗂️', l: 'Momentplanering', d: 'Detaljerad planering av ett arbetsområde (1–8 veckor)', t: ['Veckoindelning','Formativ + Summativ','Differentiering'] },
+  { id: 'lektionsplanering', e: '📝', l: 'Lektionsplanering', d: 'Komplett lektionsdesign med tavelstruktur, 5E-modell och exit ticket', t: ['5E-modellen','Tavelstruktur','AFL + Gamification'] },
+];
+
+const NEEDS = [
+  { id: 'sarbe', l: 'Särbegåvade', e: '🌟', c: '#D97706', b: '#FFFBEB' },
+  { id: 'adhd', l: 'ADHD', e: '⚡', c: '#4F46E5', b: '#EEF2FF' },
+  { id: 'ast', l: 'AST', e: '🧩', c: '#059669', b: '#ECFDF5' },
+  { id: 'ast_adhd', l: 'AST + ADHD', e: '🔄', c: '#7C3AED', b: '#F5F3FF' },
+  { id: 'dyskalkyli', l: 'Dyskalkyli', e: '🔢', c: '#DC2626', b: '#FEF2F2' },
+  { id: 'dyslexi', l: 'Dyslexi', e: '📖', c: '#DB2777', b: '#FDF2F8' },
+  { id: 'trauma', l: 'Traumatiserad skolgång', e: '💙', c: '#2563EB', b: '#EFF6FF' },
+  { id: 'hemma', l: 'Hemmasittare', e: '🏠', c: '#EA580C', b: '#FFF7ED' },
+  { id: 'nyanlanda', l: 'Nyanlända', e: '🌍', c: '#0D9488', b: '#F0FDFA' },
+  { id: 'annat', l: 'Annat specifikt behov', e: '♿', c: '#4B5563', b: '#F9FAFB' },
+];
+
+const FOCUS = [
+  { id: 'formative', l: 'Formativa bedömningar', e: '📊', d: 'AFL, exit tickets, återkoppling' },
+  { id: 'summative', l: 'Summativa bedömningar', e: '📋', d: 'Rättsäker examination' },
+  { id: 'differentiation', l: 'Differentiering', e: '🎯', d: 'Anpassningar för alla nivåer' },
+  { id: 'growth', l: 'Growth Mindset (Dweck)', e: '🧠', d: 'Stanford-principer' },
+  { id: 'gamification', l: 'Gamification', e: '🎮', d: 'XP, badges, levels, quests' },
+  { id: 'visual', l: 'Visualisering', e: '👁️', d: 'Grafiska verktyg, diagram' },
+  { id: 'cooperative', l: 'Kooperativt lärande', e: '🤝', d: 'Strukturerade grupper' },
+  { id: 'digital', l: 'Google Classroom', e: '💻', d: 'Digital implementation' },
+  { id: 'portfolio', l: 'Portfolio / Loggbok', e: '📔', d: 'Elevernas dokumentation' },
+  { id: 'inquiry', l: 'Undersökande lärande', e: '🔬', d: 'Problembaserad metodik' },
+];
+
+function loadProfile() { try { return JSON.parse(localStorage.getItem('lararprofil') || '{}'); } catch { return {}; } }
+function saveProfile(p) { try { localStorage.setItem('lararprofil', JSON.stringify(p)); } catch {} }
+
+function updateProfileFromEdit(cfg, instr, profile) {
+  const p = { ...profile }; p.amnen = p.amnen || {};
+  const key = cfg.subject + (cfg.course ? '_' + cfg.course : '');
+  if (!p.amnen[key]) p.amnen[key] = { redigeringar: [] };
+  p.amnen[key].redigeringar = [...(p.amnen[key].redigeringar || []).slice(-9), instr];
+  saveProfile(p); return p;
+}
+
+function profileContext(cfg, profile) {
+  const key = cfg.subject + (cfg.course ? '_' + cfg.course : '');
+  const ed = profile && profile.amnen && profile.amnen[key] && profile.amnen[key].redigeringar;
+  if (!ed || !ed.length) return '';
+  return '\n\nLÄRARENS STIL (tidigare redigeringar):\n' + ed.map((r,i) => (i+1)+'. '+r).join('\n');
+}
+
+function buildLektionPrompt(cfg, profile) {
+  const sd = cfg.level === 'gymnasiet' ? 'Gy25' : 'Lgr22';
+  const course = cfg.level === 'gymnasiet' ? cfg.subject + ' ' + cfg.course : cfg.subject + ' åk 7–9';
+  const nlArr = NEEDS.filter(n => (cfg.needs[n.id]||0) > 0).map(n => n.l + ': ' + cfg.needs[n.id] + ' elever');
+  const nl = nlArr.join(', ');
+  const hasG = cfg.focus.includes('gamification');
+  const hasD = cfg.focus.includes('digital');
+  const prof = profileContext(cfg, profile);
+  return 'Du är expert på pedagogik och lektionsdesign för den svenska skolan (' + sd + ').\n' +
+    'Skapa KOMPLETT lektionsplanering för ' + course + ', moment: "' + cfg.moment + '", tidsram: ' + cfg.duration + ', ' + cfg.totalStudents + ' elever.' + (nl ? ' Behov: ' + nl + '.' : '') + prof + '\n\n' +
+    'OBLIGATORISK STRUKTUR:\n\n' +
+    '# 📋 LEKTIONSPLANERING\n' +
+    '**Ämne:** ' + course + ' | **Datum:** [Datum] | **Tid:** [HH:MM–HH:MM] | **Sal:** [Sal]\n' +
+    '**Lärare:** [Namn] | **Klass/Grupp:** [Klass]\n\n---\n\n' +
+    '## 🎯 LÄRANDEMÅL\n2–4 konkreta mål: "Eleven ska kunna…" – koppla till ' + sd + ' betygskriterier (E/C/A).\n\n---\n\n' +
+    '## 🖊️ TAVELSTRUKTUR\n- **Datum & Ämne**\n- **Lärandemål** (elevvänlig, max 2 meningar)\n- **Agenda** (med klockslag)\n- **Material**\n- **När du är klar** (färdiguppgift)\n\n---\n\n' +
+    '## 🔄 LEKTIONSFLÖDE (5E-modellen)\n\n' +
+    '### ⚡ ENGAGERA – aktivering & repetition [~10 min]\nKoncret aktivitet, hook, koppling till förra lektionen.' + (hasG ? '\n🎮 Warm-up quiz med XP-poäng' : '') + '\n\n' +
+    '### 🔍 UTFORSKA – målgenomgång [~5 min]\nPresentera lärandemålen engagerande. Growth Mindset: "Idag utmanar vi hjärnan med…"\n\n' +
+    '### 📚 FÖRKLARA – genomgång [~15–20 min]\nSteg-för-steg med konkreta exempel, analogier.' + (hasG ? '\n🎮 Mini-Kahoot halvvägs' : '') + (hasD ? '\n💻 Google Classroom: länk till material' : '') + '\n\n' +
+    '### ✏️ UTVECKLA – aktivt arbete [~15–20 min]\nUppgifter på 2 nivåer: E-nivå och C/A-nivå. Kooperativt moment.' + (hasG ? '\n🎮 XP för uppgifter, badge för fördjupning' : '') + '\n\n' +
+    '### ✅ UTVÄRDERA – exit ticket & reflektion [~5–8 min]\nExit ticket: 2–3 frågor kopplade till lärandemålen.\nKamratbedömning: two stars & a wish.\nGrowth Mindset-avslut.\n\n---\n\n' +
+    '## 🎨 DIFFERENTIERING & ANPASSNINGAR\nTabell: | Elevgrupp | Anpassning | Stödmaterial | – minst 3 rader.\n\n---\n\n' +
+    '## 📊 BEDÖMNING\nFormativ observation + koppling till ' + sd + ' betygskriterier.\n\n---\n\n' +
+    '## 🧠 GROWTH MINDSET\n3 konkreta moment med EXAKTA lärarformuleringar.\n\n---\n\n' +
+    '## 📝 LÄXA / NÄSTA LEKTION\nKort instruktion, spaced repetition-princip.\n\n' +
+    'Skriv pedagogisk, klar svenska. Var KONKRET – direkt ut i klassrummet.';
+}
+
+function buildGenericPrompt(cfg, profile) {
+  const sd = cfg.level === 'gymnasiet' ? 'Gy25' : 'Lgr22';
+  const course = cfg.level === 'gymnasiet' ? cfg.subject + ' ' + cfg.course : cfg.subject + ' åk 7–9';
+  const pt = (PLAN_TYPES.find(p => p.id === cfg.planningType) || {}).l || '';
+  const nlArr = NEEDS.filter(n => (cfg.needs[n.id]||0) > 0).map(n => n.l + ': ' + cfg.needs[n.id] + ' elever');
+  const fl = FOCUS.filter(f => cfg.focus.includes(f.id)).map(f => f.l).join(', ');
+  return 'Expert på svenska skolan (' + sd + '), pedagogik, didaktik. Skapa komplett ' + pt + ' för ' + course + '.\n' +
+    'MOMENT: "' + cfg.moment + '" | TIDSRAM: ' + cfg.duration + ' | ELEVER: ' + cfg.totalStudents + (nlArr.length ? ' | BEHOV: ' + nlArr.join(', ') : '') + '\n' +
+    'FOKUS: ' + fl + profileContext(cfg, profile) + '\n' +
+    'Ramverk: Growth Mindset (Dweck), Stanford spaced repetition, Hattie Visible Learning, AFL, UDL.\n' +
+    (cfg.focus.includes('gamification') ? 'GAMIFICATION: XP, badges, Novice→Master levels.\n' : '') +
+    (cfg.focus.includes('digital') ? 'GOOGLE CLASSROOM: Topics, Forms, Quiz – konkreta steg.\n' : '') +
+    'Inkludera: bedömningsmatris som tabell, tidsplan som tabell, Growth Mindset-inslag. Var KONKRET.';
+}
+
+function pb(text) {
+  if (!text) return text;
+  const parts = []; const re = /\*\*(.+?)\*\*/g;
+  let last = 0, m, k = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(React.createElement('strong', {key: k++, style:{fontWeight:700,color:'#1E3A8A'}}, m[1]));
+    last = re.lastIndex;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length ? parts : text;
+}
+
+function MD({text}) {
+  const els = [], lines = text.split('\n');
+  let i = 0, k = 0;
+  while (i < lines.length) {
+    const t = lines[i].trim();
+    if (t.startsWith('# ')) { els.push(<div key={k++} className="MH1">{pb(t.slice(2))}</div>); i++; }
+    else if (t.startsWith('## ')) { els.push(<div key={k++} className="MH2">{pb(t.slice(3))}</div>); i++; }
+    else if (t.startsWith('### ') || t.startsWith('#### ')) { els.push(<div key={k++} className="MH3">{pb(t.slice(t.startsWith('#### ')?5:4))}</div>); i++; }
+    else if (/^-{3,}$/.test(t)) { els.push(<div key={k++} className="MHR"/>); i++; }
+    else if (t.startsWith('|')) {
+      const tbl = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { tbl.push(lines[i]); i++; }
+      const rows = tbl.filter(l => !/^\s*\|[\s\-:|]+\|\s*$/.test(l));
+      if (rows.length > 1) {
+        const [hr, ...br] = rows;
+        const heads = hr.split('|').filter(c => c.trim());
+        els.push(
+          <table key={k++} className="MT">
+            <thead><tr>{heads.map((h,hi) => <th key={hi} className="MTH">{pb(h.trim())}</th>)}</tr></thead>
+            <tbody>{br.map((row,ri) => {
+              const cells = row.split('|').filter(c => c.trim());
+              return <tr key={ri} className={ri%2===1?'MTE':''}>{cells.map((c,ci) => <td key={ci} className="MTD">{pb(c.trim())}</td>)}</tr>;
+            })}</tbody>
+          </table>
+        );
+      }
+    }
+    else if (t.startsWith('- ') || t.startsWith('* ') || t.startsWith('• ')) {
+      const items = [];
+      while (i < lines.length && (lines[i].trim().startsWith('- ') || lines[i].trim().startsWith('* ') || lines[i].trim().startsWith('• '))) {
+        items.push(<li key={items.length} className="MLI">{pb(lines[i].trim().slice(2))}</li>); i++;
+      }
+      els.push(<ul key={k++} className="MUL">{items}</ul>);
+    }
+    else if (/^\d+\.\s/.test(t)) {
+      const items = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i].trim())) {
+        items.push(<li key={items.length} className="MLI">{pb(lines[i].trim().replace(/^\d+\.\s/,''))}</li>); i++;
+      }
+      els.push(<ol key={k++} className="MOL">{items}</ol>);
+    }
+    else if (!t) { els.push(<div key={k++} style={{height:5}}/>); i++; }
+    else { els.push(<p key={k++} className="MP">{pb(t)}</p>); i++; }
+  }
+  return <div>{els}</div>;
+}
+
+function App() {
+  const [step, setStep] = useState(0);
+  const [level, setLevel] = useState('');
+  const [planType, setPlanType] = useState('');
+  const [subject, setSubject] = useState('');
+  const [course, setCourse] = useState('');
+  const [moment, setMoment] = useState('');
+  const [duration, setDuration] = useState('1 lektion');
+  const [totalStudents, setTotalStudents] = useState(25);
+  const [needs, setNeeds] = useState({});
+  const [focus, setFocus] = useState(['formative','summative','differentiation','growth','gamification','visual']);
+  const [out, setOut] = useState('');
+  const [gen, setGen] = useState(false);
+  const [err, setErr] = useState('');
+  const [editText, setEditText] = useState('');
+  const [editGen, setEditGen] = useState(false);
+  const [editHistory, setEditHistory] = useState([]);
+  const [profile, setProfile] = useState(loadProfile);
+  const [showProfile, setShowProfile] = useState(false);
+  const outRef = useRef(null);
+  const editRef = useRef(null);
+
+  useEffect(() => { if (outRef.current) outRef.current.scrollTop = outRef.current.scrollHeight; }, [out]);
+
+  const cfg = { level, planningType: planType, subject, course, moment, duration, totalStudents, needs, focus };
+  const isLektion = planType === 'lektionsplanering';
+
+  const ok = () => {
+    if (step === 1) return !!level;
+    if (step === 2) return !!planType;
+    if (step === 3) return !!subject && (level === 'hogstadiet' || !!course);
+    if (step === 4) return moment.trim().length > 0;
+    if (step === 5) return totalStudents >= 1;
+    if (step === 6) return focus.length >= 1;
+    return true;
+  };
+
+  // ── PROXY CALL — API-nyckeln är gömd på servern ──────────
+  const callAPI = async (msg) => {
+    const r = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: msg }] }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    if (!text) throw new Error('Tomt svar. Försök igen.');
+    return text;
+  };
+
+  const generate = async () => {
+    setGen(true); setOut(''); setErr(''); setEditHistory([]);
+    const prompt = isLektion ? buildLektionPrompt(cfg, profile) : buildGenericPrompt(cfg, profile);
+    try {
+      const t = await callAPI(prompt + '\n\nSkapa nu planeringen direkt, komplett och klar att använda i klassrummet.');
+      setOut(t);
+    } catch(e) { setErr('Fel: ' + e.message); }
+    finally { setGen(false); }
+  };
+
+  const applyEdit = async () => {
+    if (!editText.trim() || !out) return;
+    setEditGen(true);
+    const instr = editText.trim();
+    try {
+      const msg = 'Du är expert på pedagogik och lektionsplanering.\nBefintlig planering:\n' + out + '\n\n---\nLÄRARENS ÖNSKEMÅL: ' + instr + '\n\nUppdatera planeringen. Behåll allt som inte berörs. Returnera fullständig uppdaterad planering.';
+      const t = await callAPI(msg);
+      setOut(t);
+      setEditHistory(h => [...h, instr]);
+      setEditText('');
+      setProfile(p => updateProfileFromEdit(cfg, instr, p));
+      if (editRef.current) editRef.current.scrollIntoView({behavior:'smooth',block:'center'});
+    } catch(e) { setErr('Redigering misslyckades: ' + e.message); }
+    finally { setEditGen(false); }
+  };
+
+  const goGen = () => { setStep(7); generate(); };
+  const SLBLS = ['Nivå','Typ','Ämne','Moment','Elever','Fokus'];
+  const profCount = Object.values(profile.amnen || {}).reduce((s,a) => s + (a.redigeringar ? a.redigeringar.length : 0), 0);
+
+  return (
+    <div>
+      <div className="W">
+        <div className="HDR">
+          <div className="LOGO">
+            <div className="LI">🎓</div>
+            <div className="LT">
+              <h2>AI Lärarassistent</h2>
+              <p>USIP-modellen · Gy25/Lgr22 · Growth Mindset · Stanford · 5E-modellen</p>
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            {step > 0 && step < 7 && (
+              <div className="PROG">
+                {SLBLS.map((l,i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center'}}>
+                    {i > 0 && <div className={'PL' + (i < step ? ' done' : '')} />}
+                    <div className={'PS' + (i+1===step?' act':i+1<step?' done':' fut')} title={l}>{i+1<step?'✓':i+1}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {profCount > 0 && (
+              <div className="PROFBADGE" onClick={() => setShowProfile(s => !s)}>
+                <span>🧠</span>
+                <span>{profCount} stilinlärning{profCount !== 1 ? 'ar' : ''}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showProfile && (
+          <div style={{background:'white',borderRadius:16,padding:'18px 22px',marginBottom:14,boxShadow:'0 8px 32px rgba(0,0,0,.3)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,color:'#1E293B'}}>🧠 Din stilprofil</span>
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={() => { saveProfile({}); setProfile({}); setShowProfile(false); }} style={{padding:'4px 10px',borderRadius:6,border:'1px solid #FECACA',background:'#FEF2F2',color:'#DC2626',fontSize:12,fontWeight:700,cursor:'pointer'}}>Återställ</button>
+                <button onClick={() => setShowProfile(false)} style={{padding:'4px 10px',borderRadius:6,border:'1px solid #E2E8F0',background:'#F8FAFC',color:'#64748B',fontSize:12,fontWeight:700,cursor:'pointer'}}>Stäng</button>
+              </div>
+            </div>
+            {Object.entries(profile.amnen || {}).map(([key,data]) => (
+              <div key={key} style={{marginBottom:10}}>
+                <div style={{fontWeight:700,fontSize:13,color:'#1E3A8A',marginBottom:4}}>{key.replace('_',' ')}</div>
+                {(data.redigeringar || []).map((r,i) => <div key={i} style={{borderLeft:'3px solid #1D4ED8',paddingLeft:12,marginBottom:3,fontSize:12.5,color:'#475569'}}>{r}</div>)}
+              </div>
+            ))}
+            <div style={{fontSize:11,color:'#94A3B8',marginTop:6}}>Lär sig din stil från varje redigering. Sparas lokalt i webbläsaren.</div>
+          </div>
+        )}
+
+        <div className="CARD">
+          {step === 0 && (
+            <div style={{textAlign:'center',padding:'4px 0'}}>
+              <div className="HB">✨ Cedergrenska · AI-stöd för lärare · Gy25/Lgr22</div>
+              <div style={{fontSize:48,marginBottom:8}}>🎓</div>
+              <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:30,fontWeight:800,color:'#080E1C',letterSpacing:'-.7px',marginBottom:7}}>AI Lärarassistent</h1>
+              <p style={{color:'#475569',fontSize:14,maxWidth:480,margin:'0 auto 5px',lineHeight:1.7}}>
+                Skapa professionella lektionsplaneringar på sekunder — baserade på <strong style={{color:'#1A56DB'}}>Gy25/Lgr22</strong>, <strong style={{color:'#6C35DE'}}>Growth Mindset</strong> och 5E-modellen.
+              </p>
+              <p style={{color:'#94A3B8',fontSize:11.5,marginBottom:20}}>USIP-modellen · Tavelstruktur · Rättsäker bedömning · AI lär sig din stil</p>
+              <div className="FEAT">
+                {[['📝','Lektionsplanering','5E-modell, tavelstruktur, exit ticket'],['🧠','Lär sig din stil','Minns preferenser per ämne och kurs'],['✏️','Redigera med AI','Beskriv ändring – uppdateras direkt'],['📅','Lärsårsplanering','Helårsoversikt med alla moment'],['🎮','Gamification','XP, badges, levels inbakat'],['♿','Full inkludering','ADHD, AST, dyslexi – anpassningar']].map(([e,t,d],i) => (
+                  <div key={i} className="FC"><div style={{fontSize:22,marginBottom:6}}>{e}</div><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:12.5,color:'#1E293B',marginBottom:2}}>{t}</div><div style={{fontSize:11,color:'#64748B',lineHeight:1.5}}>{d}</div></div>
+                ))}
+              </div>
+              <button className="BTG" onClick={() => setStep(1)} style={{fontSize:15,padding:'13px 44px'}}>Starta planeringsguiden →</button>
+              <p style={{color:'#94A3B8',fontSize:11,marginTop:10}}>Gratis för alla lärare på Cedergrenska</p>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div>
+              <div className="TIT">Vilken skolnivå undervisar du?</div>
+              <div className="SUB">Väljer rätt styrdokument automatiskt</div>
+              <div className="G2">
+                {[{id:'hogstadiet',e:'📚',l:'Högstadiet',s:'Lgr22 · Åk 7–9',d:'Kunskapskrav E, C, A.'},{id:'gymnasiet',e:'🎓',l:'Gymnasiet',s:'Gy25 · Alla program',d:'Betygsskala A–F.'}].map(o => (
+                  <div key={o.id} className={'OPT' + (level===o.id?' sel':'')} onClick={() => { setLevel(o.id); setSubject(''); setCourse(''); }}>
+                    <div style={{fontSize:32,marginBottom:8}}>{o.e}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
+                      <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:17,color:'#0F172A'}}>{o.l}</span>
+                      <span style={{background:'#DBEAFE',color:'#1E40AF',padding:'2px 8px',borderRadius:20,fontSize:10,fontWeight:700}}>{o.s}</span>
+                    </div>
+                    <div style={{color:'#64748B',fontSize:12.5}}>{o.d}</div>
+                    {level === o.id && <div className="OCH">✓</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <div className="TIT">Vad vill du planera?</div>
+              <div className="SUB">Lektionsplanering inkluderar tavelstruktur och 5E-modell</div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {PLAN_TYPES.map(pt => (
+                  <div key={pt.id} className={'OPT' + (planType===pt.id?' sel':'')} style={{display:'flex',alignItems:'flex-start',gap:13}} onClick={() => setPlanType(pt.id)}>
+                    <div style={{fontSize:25,flexShrink:0,marginTop:2}}>{pt.e}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:16,color:'#0F172A',marginBottom:2}}>{pt.l}</div>
+                      <div style={{color:'#64748B',fontSize:12.5}}>{pt.d}</div>
+                      <div>{pt.t.map((tag,i) => <span key={i} className="TAG">{tag}</span>)}</div>
+                    </div>
+                    {planType === pt.id && <div style={{width:22,height:22,borderRadius:'50%',background:'#1A56DB',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:13,flexShrink:0}}>✓</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div className="TIT">Vilket ämne och kurs?</div>
+              <div style={{marginBottom:16}}>
+                <label className="LBL">Ämne</label>
+                <select className="SEL" value={subject} onChange={e => { setSubject(e.target.value); setCourse(''); }}>
+                  <option value="">Välj ämne…</option>
+                  {(level === 'gymnasiet' ? Object.keys(GY) : HG).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {level === 'gymnasiet' && subject && GY[subject] && GY[subject].length > 0 && (
+                <div style={{marginBottom:14}}>
+                  <label className="LBL">Kursnivå (Gy25)</label>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
+                    {GY[subject].map(c => <button key={c} className={'CB' + (course===c?' act':'')} onClick={() => setCourse(c)}>{subject} {c}</button>)}
+                  </div>
+                </div>
+              )}
+              {subject && <div className="IB gn"><strong>✓ Valt: {subject}{course ? ' ' + course : ''}</strong></div>}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div>
+              <div className="TIT">Vilket moment ska planeras?</div>
+              <div style={{marginBottom:18}}>
+                <label className="LBL">Moment / Tema</label>
+                <input className="INP" type="text" placeholder='t.ex. "Privatekonomi – lån, ränta och budget"' value={moment} onChange={e => setMoment(e.target.value)} />
+              </div>
+              <div>
+                <label className="LBL">Tidsram</label>
+                <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
+                  {['1 lektion','2 lektioner','1 vecka','2 veckor','3 veckor','4 veckor','5 veckor','6 veckor','8 veckor','Hela terminen','Hela läsåret'].map(d => (
+                    <button key={d} className={'CB' + (duration===d?' act':'')} onClick={() => setDuration(d)}>{d}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div>
+              <div className="TIT">Berätta om elevgruppen</div>
+              <div className="SBOX">
+                <div style={{flex:1}}>
+                  <label className="LBL">Totalt antal elever</label>
+                  <input type="range" min={1} max={35} value={totalStudents} onChange={e => setTotalStudents(parseInt(e.target.value))} style={{width:'100%',marginTop:6,accentColor:'#1A56DB'}}/>
+                </div>
+                <div style={{textAlign:'center'}}><div className="BN">{totalStudents}</div><div style={{color:'#64748B',fontSize:11,fontWeight:600}}>elever</div></div>
+              </div>
+              <div className="NG">
+                {NEEDS.map(n => {
+                  const v = needs[n.id] || 0;
+                  return (
+                    <div key={n.id} className="NC" style={{borderColor:v>0?n.c+'55':'#E2E8F0',background:v>0?n.b:'#FAFBFC'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:7}}>
+                        <span style={{fontSize:16}}>{n.e}</span>
+                        <div style={{fontWeight:700,fontSize:11.5,color:'#1E293B'}}>{n.l}</div>
+                      </div>
+                      <input type="number" className="NIN" min={0} max={totalStudents} value={v||''} placeholder="0"
+                        style={{borderColor:v>0?n.c:'#E2E8F0'}}
+                        onChange={e => { const val = Math.max(0, Math.min(totalStudents, parseInt(e.target.value)||0)); setNeeds(prev => ({...prev, [n.id]: val})); }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {Object.values(needs).reduce((s,v) => s+v,0) > 0 && <div className="IB am" style={{marginTop:10}}><strong>✓ {Object.values(needs).reduce((s,v)=>s+v,0)} elever med specifika behov</strong></div>}
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
+              <div className="TIT">Fokusområden</div>
+              <div className="SUB">Välj vad du vill ha extra fokus på (minst ett)</div>
+              <div className="FG">
+                {FOCUS.map(f => {
+                  const on = focus.includes(f.id);
+                  return (
+                    <div key={f.id} className={'FI' + (on?' on':'')} onClick={() => setFocus(prev => on ? prev.filter(x => x!==f.id) : [...prev, f.id])}>
+                      <div className="FCB">{on && '✓'}</div>
+                      <span style={{fontSize:15}}>{f.e}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:12,color:on?'#1D4ED8':'#1E293B'}}>{f.l}</div>
+                        <div style={{fontSize:11,color:'#64748B'}}>{f.d}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 7 && (
+            <div>
+              <div className="TIT" style={{fontSize:21,marginBottom:3}}>{gen?'⚙️ Skapar din planering…':out?'✅ Planering klar!':'🚀 Redo att generera'}</div>
+              <div style={{color:'#64748B',fontSize:12.5,marginBottom:8}}>
+                {(PLAN_TYPES.find(p=>p.id===planType)||{}).l} · {level==='gymnasiet'?subject+' '+course:subject+' åk 7–9'} · {moment} · {duration}
+              </div>
+              {err && <div className="EB">⚠️ {err}</div>}
+              {gen && (
+                <div className="LOAD">
+                  <div className="SPIN"/>
+                  <div style={{fontWeight:700,color:'#374151',fontSize:14}}>{isLektion?'Skapar 5E-lektionsplanering med tavelstruktur…':'Skapar planering baserat på styrdokumenten…'}</div>
+                  <div style={{fontSize:12,color:'#94A3B8'}}>Tar vanligtvis 10–20 sekunder</div>
+                </div>
+              )}
+              {out && (
+                <>
+                  <div ref={outRef} className="OC"><MD text={out}/></div>
+                  <div ref={editRef} className="EDITBOX">
+                    <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:14.5,color:'#065F46',marginBottom:2}}>
+                      ✏️ Redigera planeringen
+                      {editHistory.length > 0 && <span style={{marginLeft:8,background:'#D1FAE5',color:'#065F46',padding:'1px 8px',borderRadius:10,fontSize:11,fontWeight:700}}>{editHistory.length} redigering{editHistory.length>1?'ar':''}</span>}
+                    </div>
+                    <div style={{fontSize:12,color:'#047857',marginBottom:7}}>Beskriv vad du vill ändra – AI:n uppdaterar direkt och lär sig din stil.</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+                      {['Kortare intro (5 min)','Lägg till Kahoot','Anpassa för ADHD','Mer konkreta uppgifter','Lägg till parövning','Längre exit ticket'].map(s => (
+                        <button key={s} className="QCHIP" onClick={() => setEditText(s)}>{s}</button>
+                      ))}
+                    </div>
+                    <div className="EDITROW">
+                      <textarea className="EDITA"
+                        placeholder="Beskriv din ändring, t.ex. 'Gör genomgången kortare, max 10 min'…"
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) applyEdit(); }}
+                      />
+                      <button className="EDITBTN" onClick={applyEdit} disabled={editGen || !editText.trim()}>
+                        {editGen ? '…' : '↑ Uppdatera'}
+                      </button>
+                    </div>
+                    <div style={{fontSize:10.5,color:'#6EE7B7',marginTop:4}}>Ctrl+Enter · Varje redigering sparas i din stilprofil</div>
+                  </div>
+                </>
+              )}
+              {!out && !gen && !err && (
+                <div style={{textAlign:'center',padding:'28px 0'}}>
+                  <button className="BTG" onClick={generate} style={{fontSize:15,padding:'13px 42px'}}>🚀 Generera planering</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {step > 0 && step < 7 && (
+          <div className="NAV">
+            <button className="BTB" onClick={() => setStep(s => s-1)}>← Tillbaka</button>
+            {step < 6
+              ? <button className="BTN" onClick={() => setStep(s => s+1)} disabled={!ok()}>Fortsätt →</button>
+              : <button className="BTG" onClick={goGen} disabled={!ok()}>🚀 Generera planering</button>
+            }
+          </div>
+        )}
+
+        {step === 7 && (
+          <div className="NAV">
+            <button className="BTB" onClick={() => { setStep(1); setOut(''); setErr(''); setEditHistory([]); setMoment(''); setPlanType(''); setLevel(''); setSubject(''); setCourse(''); }}>← Ny planering</button>
+            {!gen && out && (
+              <button className="BTB" style={{color:'rgba(255,255,255,.7)'}} onClick={() => {
+                const b = new Blob([out], {type:'text/plain;charset=utf-8'});
+                const u = URL.createObjectURL(b);
+                const a = document.createElement('a');
+                a.href = u; a.download = 'planering_' + subject + '_' + moment.slice(0,15).replace(/\s/g,'_') + '.md'; a.click();
+                URL.revokeObjectURL(u);
+              }}>💾 Ladda ner (.md)</button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
