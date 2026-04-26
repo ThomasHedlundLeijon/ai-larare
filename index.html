@@ -107,6 +107,7 @@ const GY = {
   'Svenska': ['1','2','3'], 'Svenska som andraspråk': ['1','2','3'],
   'Teknik': ['1','2'], 'Programmering': ['1','2'], 'Företagsekonomi': ['1','2'],
 };
+
 const HG = ['Biologi','Engelska','Fysik','Geografi','Historia','Idrott och hälsa','Kemi','Matematik','Moderna språk','Musik','Religionskunskap','Samhällskunskap','Slöjd','Svenska','Svenska som andraspråk','Teknik'];
 
 const PLAN_TYPES = [
@@ -143,6 +144,7 @@ const FOCUS = [
 
 function loadProfile() { try { return JSON.parse(localStorage.getItem('lararprofil') || '{}'); } catch { return {}; } }
 function saveProfile(p) { try { localStorage.setItem('lararprofil', JSON.stringify(p)); } catch {} }
+
 function updateProfileFromEdit(cfg, instr, profile) {
   const p = { ...profile }; p.amnen = p.amnen || {};
   const key = cfg.subject + (cfg.course ? '_' + cfg.course : '');
@@ -150,6 +152,7 @@ function updateProfileFromEdit(cfg, instr, profile) {
   p.amnen[key].redigeringar = [...(p.amnen[key].redigeringar || []).slice(-9), instr];
   saveProfile(p); return p;
 }
+
 function profileContext(cfg, profile) {
   const key = cfg.subject + (cfg.course ? '_' + cfg.course : '');
   const ed = profile && profile.amnen && profile.amnen[key] && profile.amnen[key].redigeringar;
@@ -176,7 +179,7 @@ function buildLektionPrompt(cfg, profile) {
     '## 🔄 LEKTIONSFLÖDE (5E-modellen)\n\n' +
     '### ⚡ ENGAGERA – aktivering & repetition [~10 min]\nKoncret aktivitet, hook, koppling till förra lektionen.' + (hasG ? '\n🎮 Warm-up quiz med XP-poäng' : '') + '\n\n' +
     '### 🔍 UTFORSKA – målgenomgång [~5 min]\nPresentera lärandemålen engagerande. Growth Mindset: "Idag utmanar vi hjärnan med…"\n\n' +
-    '### 📚 FÖRKLARA – genomgång [~15–20 min]\nSteg-för-steg med konkreta exempel, analogier. Markera The Big Five-förmågor.' + (hasG ? '\n🎮 Mini-Kahoot halvvägs' : '') + (hasD ? '\n💻 Google Classroom: länk till material' : '') + '\n\n' +
+    '### 📚 FÖRKLARA – genomgång [~15–20 min]\nSteg-för-steg med konkreta exempel, analogier.' + (hasG ? '\n🎮 Mini-Kahoot halvvägs' : '') + (hasD ? '\n💻 Google Classroom: länk till material' : '') + '\n\n' +
     '### ✏️ UTVECKLA – aktivt arbete [~15–20 min]\nUppgifter på 2 nivåer: E-nivå och C/A-nivå. Kooperativt moment.' + (hasG ? '\n🎮 XP för uppgifter, badge för fördjupning' : '') + '\n\n' +
     '### ✅ UTVÄRDERA – exit ticket & reflektion [~5–8 min]\nExit ticket: 2–3 frågor kopplade till lärandemålen.\nKamratbedömning: two stars & a wish.\nGrowth Mindset-avslut.\n\n---\n\n' +
     '## 🎨 DIFFERENTIERING & ANPASSNINGAR\nTabell: | Elevgrupp | Anpassning | Stödmaterial | – minst 3 rader.\n\n---\n\n' +
@@ -280,8 +283,6 @@ function App() {
   const [editHistory, setEditHistory] = useState([]);
   const [profile, setProfile] = useState(loadProfile);
   const [showProfile, setShowProfile] = useState(false);
-  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem('anthropic_key') || ''; } catch { return ''; } });
-  const [showKeySetup, setShowKeySetup] = useState(false);
   const outRef = useRef(null);
   const editRef = useRef(null);
 
@@ -300,24 +301,12 @@ function App() {
     return true;
   };
 
-  const saveApiKey = (key) => {
-    const k = key.trim();
-    setApiKey(k);
-    try { localStorage.setItem('anthropic_key', k); } catch {}
-    setShowKeySetup(false);
-  };
-
+  // ── PROXY CALL — API-nyckeln är gömd på servern ──────────
   const callAPI = async (msg) => {
-    if (!apiKey) throw new Error('API-nyckel saknas. Klicka på "⚙️ API-nyckel" i toppen och ange din nyckel.');
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('/.netlify/functions/claude', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{role:'user',content:msg}] }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: msg }] }),
     });
     const data = await r.json();
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
@@ -362,7 +351,10 @@ function App() {
         <div className="HDR">
           <div className="LOGO">
             <div className="LI">🎓</div>
-            <div className="LT"><h2>AI Lärarassistent</h2><p>USIP-modellen · Gy25/Lgr22 · Growth Mindset · Stanford Universitets pedagogiska forskning · 5E-modellen</p></div>
+            <div className="LT">
+              <h2>AI Lärarassistent</h2>
+              <p>USIP-modellen · Gy25/Lgr22 · Growth Mindset · Stanford · 5E-modellen</p>
+            </div>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             {step > 0 && step < 7 && (
@@ -382,37 +374,7 @@ function App() {
               </div>
             )}
           </div>
-          <button onClick={() => setShowKeySetup(s => !s)} style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:apiKey?'rgba(16,185,129,.15)':'rgba(220,38,38,.15)',border:'1px solid ' + (apiKey?'rgba(16,185,129,.3)':'rgba(220,38,38,.3)'),borderRadius:20,cursor:'pointer',color:apiKey?'#6EE7B7':'#FCA5A5',fontSize:12,fontFamily:"'Syne',sans-serif",fontWeight:600}}>
-            <span>{apiKey ? '✅' : '⚠️'}</span>
-            <span>{apiKey ? 'API aktiv' : 'API-nyckel saknas'}</span>
-          </button>
         </div>
-
-        {showKeySetup && (
-          <div style={{background:'white',borderRadius:16,padding:'20px 24px',marginBottom:14,boxShadow:'0 8px 32px rgba(0,0,0,.4)'}}>
-            <div style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:16,color:'#1E293B',marginBottom:6}}>🔑 Anthropic API-nyckel</div>
-            <p style={{fontSize:13,color:'#64748B',marginBottom:14,lineHeight:1.6}}>
-              Hämta din nyckel på <strong>console.anthropic.com</strong> → API Keys → Create Key.<br/>
-              Nyckeln börjar med <code style={{background:'#F1F5F9',padding:'2px 6px',borderRadius:4,fontSize:12}}>sk-ant-...</code> och sparas lokalt i din webbläsare.
-            </p>
-            <div style={{display:'flex',gap:10}}>
-              <input
-                type="password"
-                placeholder="sk-ant-api03-..."
-                defaultValue={apiKey}
-                id="apikeyinput"
-                style={{flex:1,padding:'11px 14px',border:'2px solid #E2E8F0',borderRadius:10,fontSize:14,fontFamily:"'Nunito',sans-serif",outline:'none'}}
-                onFocus={e => e.target.style.borderColor='#1A56DB'}
-                onBlur={e => e.target.style.borderColor='#E2E8F0'}
-              />
-              <button onClick={() => { const v = document.getElementById('apikeyinput').value; saveApiKey(v); }}
-                style={{padding:'11px 22px',borderRadius:10,background:'linear-gradient(135deg,#1A56DB,#2563EB)',color:'white',border:'none',fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:14,cursor:'pointer'}}>
-                Spara
-              </button>
-            </div>
-            {apiKey && <div style={{marginTop:10,fontSize:12,color:'#10B981',fontWeight:600}}>✅ Nyckel sparad – appen är redo att användas!</div>}
-          </div>
-        )}
 
         {showProfile && (
           <div style={{background:'white',borderRadius:16,padding:'18px 22px',marginBottom:14,boxShadow:'0 8px 32px rgba(0,0,0,.3)'}}>
@@ -436,20 +398,20 @@ function App() {
         <div className="CARD">
           {step === 0 && (
             <div style={{textAlign:'center',padding:'4px 0'}}>
-              <div className="HB">✨ Prototyp · Cedergrenska 2025 · Open Source</div>
+              <div className="HB">✨ Cedergrenska · AI-stöd för lärare · Gy25/Lgr22</div>
               <div style={{fontSize:48,marginBottom:8}}>🎓</div>
               <h1 style={{fontFamily:"'Syne',sans-serif",fontSize:30,fontWeight:800,color:'#080E1C',letterSpacing:'-.7px',marginBottom:7}}>AI Lärarassistent</h1>
               <p style={{color:'#475569',fontSize:14,maxWidth:480,margin:'0 auto 5px',lineHeight:1.7}}>
-                Professionella planeringar baserade på <strong style={{color:'#1A56DB'}}>USIP, Gy25/Lgr22</strong>, Carol Dwecks <strong style={{color:'#6C35DE'}}>Growth Mindset</strong> och Stanford Universitet pedagogiska forskning.
+                Skapa professionella lektionsplaneringar på sekunder — baserade på <strong style={{color:'#1A56DB'}}>Gy25/Lgr22</strong>, <strong style={{color:'#6C35DE'}}>Growth Mindset</strong> och 5E-modellen.
               </p>
-              <p style={{color:'#94A3B8',fontSize:11.5,marginBottom:20}}>Tavelstruktur · 5E-modellen · Rättsäker bedömning · Adaptiv AI - Appen lär sig varje enskild lärares stil samt varje elevs nivå, stil och lärandeprogression.</p>
+              <p style={{color:'#94A3B8',fontSize:11.5,marginBottom:20}}>USIP-modellen · Tavelstruktur · Rättsäker bedömning · AI lär sig din stil</p>
               <div className="FEAT">
                 {[['📝','Lektionsplanering','5E-modell, tavelstruktur, exit ticket'],['🧠','Lär sig din stil','Minns preferenser per ämne och kurs'],['✏️','Redigera med AI','Beskriv ändring – uppdateras direkt'],['📅','Lärsårsplanering','Helårsoversikt med alla moment'],['🎮','Gamification','XP, badges, levels inbakat'],['♿','Full inkludering','ADHD, AST, dyslexi – anpassningar']].map(([e,t,d],i) => (
                   <div key={i} className="FC"><div style={{fontSize:22,marginBottom:6}}>{e}</div><div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:12.5,color:'#1E293B',marginBottom:2}}>{t}</div><div style={{fontSize:11,color:'#64748B',lineHeight:1.5}}>{d}</div></div>
                 ))}
               </div>
               <button className="BTG" onClick={() => setStep(1)} style={{fontSize:15,padding:'13px 44px'}}>Starta planeringsguiden →</button>
-              <p style={{color:'#94A3B8',fontSize:11,marginTop:10}}>Open source · Inga licensavgifter · Skalbar för hela Cedergrenska</p>
+              <p style={{color:'#94A3B8',fontSize:11,marginTop:10}}>Gratis för alla lärare på Cedergrenska</p>
             </div>
           )}
 
@@ -520,13 +482,7 @@ function App() {
               <div className="TIT">Vilket moment ska planeras?</div>
               <div style={{marginBottom:18}}>
                 <label className="LBL">Moment / Tema</label>
-                <input
-                  className="INP"
-                  type="text"
-                  placeholder='t.ex. "Privatekonomi – lån, ränta och budget"'
-                  value={moment}
-                  onChange={e => setMoment(e.target.value)}
-                />
+                <input className="INP" type="text" placeholder='t.ex. "Privatekonomi – lån, ränta och budget"' value={moment} onChange={e => setMoment(e.target.value)} />
               </div>
               <div>
                 <label className="LBL">Tidsram</label>
@@ -594,7 +550,7 @@ function App() {
 
           {step === 7 && (
             <div>
-              <div className="TIT" style={{fontSize:21,marginBottom:3}}>{gen?'⚙️ Genererar planering…':out?'✅ Planering klar!':'🚀 Redo att generera'}</div>
+              <div className="TIT" style={{fontSize:21,marginBottom:3}}>{gen?'⚙️ Skapar din planering…':out?'✅ Planering klar!':'🚀 Redo att generera'}</div>
               <div style={{color:'#64748B',fontSize:12.5,marginBottom:8}}>
                 {(PLAN_TYPES.find(p=>p.id===planType)||{}).l} · {level==='gymnasiet'?subject+' '+course:subject+' åk 7–9'} · {moment} · {duration}
               </div>
@@ -603,6 +559,7 @@ function App() {
                 <div className="LOAD">
                   <div className="SPIN"/>
                   <div style={{fontWeight:700,color:'#374151',fontSize:14}}>{isLektion?'Skapar 5E-lektionsplanering med tavelstruktur…':'Skapar planering baserat på styrdokumenten…'}</div>
+                  <div style={{fontSize:12,color:'#94A3B8'}}>Tar vanligtvis 10–20 sekunder</div>
                 </div>
               )}
               {out && (
@@ -652,6 +609,7 @@ function App() {
             }
           </div>
         )}
+
         {step === 7 && (
           <div className="NAV">
             <button className="BTB" onClick={() => { setStep(1); setOut(''); setErr(''); setEditHistory([]); setMoment(''); setPlanType(''); setLevel(''); setSubject(''); setCourse(''); }}>← Ny planering</button>
