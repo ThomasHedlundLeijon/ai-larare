@@ -309,8 +309,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: [{ role: 'user', content: msg }] }),
     });
-    
-  const data = await r.json();
+    const data = await r.json();
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
     const result = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
     if (!result) throw new Error('Tomt svar. Försök igen.');
