@@ -4,6 +4,10 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "nft"
+
+[functions."claude"]
+  timeout = 30
 
 [[headers]]
   for = "/*"
